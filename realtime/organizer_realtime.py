@@ -61,10 +61,7 @@ class Organizer:
 			# find num of frames
 			total_bytes = bc[end_chunk] - (bc[start_chunk] + bytes_left_in_curr_frame)
 			num_frames = total_bytes // (self.BYTES_IN_FRAME)
-			# print('Num frames: ', num_frames)
-			# print('Total bytes: ', total_bytes)
-			# print("self.BYTES_IN_FRAME: ", self.BYTES_IN_FRAME)
-			num_frames = 1
+			
 
 			# print(bc[end_chunk])
 			frames = np.zeros((num_frames, self.UINT16_IN_FRAME), dtype=np.int16)
