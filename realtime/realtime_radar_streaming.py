@@ -12,7 +12,7 @@ import organizer_realtime as org
 
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
-from utils.range_spectrum import compute_range_spectrum
+from utils.range_spectrum import compute_range_spectrum_onChirp
 
 import pickle
 import sys
@@ -122,7 +122,7 @@ if __name__ == "__main__":
             realtime_frames.append(frame)
 
         ch = frame[0, 0, :]     # shape (length,)
-        range_meter, power_spec = compute_range_spectrum(ch)
+        range_meter, power_spec = compute_range_spectrum_onChirp(ch)
         # print first 10 values
         if sum(power_spec[:5]) == 0:
             print("Data spec is all zeros")
