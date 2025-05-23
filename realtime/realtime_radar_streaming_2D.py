@@ -20,7 +20,7 @@ import pickle
 import sys
 
 # ——— Device CONFIG ———
-fps             = 50          # plot update rate [Hz]
+fps             = 200          # Radar frame rate [Hz]
 num_chirp_loops = 1           # chirps per Tx cycle
 num_rx          = 4           # number of Rx antennas
 num_tx          = 3           # number of Tx antennas (3 TX)
@@ -30,9 +30,14 @@ QUEUE_MAXSIZE   = 20          # pending frames
 interval        = 300 / fps  # update interval [ms] smaller then 1000/fps will be good
 
 # ——— User CONFIG ———
-limit_meter     = 5           # range limit [m]
-data_tofu       = 4          # decide to loss how many frame for streaming stablization
+limit_meter     = 1           # range limit [m]
+data_tofu       = 4          # decide to loss how many frame for streaming stablization [a sweet spot - not recommand to change]
 save_recording  = False      # save frames to file
+
+# ——— Real fps Compute CONFIG ———
+last_time = time.time()
+frame_count = 0
+real_fps = 0
 # ————————————
 
 # Precompute packet/frame sizes
@@ -79,6 +84,9 @@ def frameQ_update_thread():
                 cache_pkt = []
         except queue.Empty:
             continue
+        except IndexError as e:
+            print("IndexError: ", e)
+            continue
 
 
 class PacketListenerThread(threading.Thread):
@@ -121,13 +129,15 @@ if __name__ == "__main__":
     ax.set_xlabel('X-Axis (meters)')
     ax.set_ylabel('Y-Axis (meters)')
     ax.set_ylim([0, limit_meter])
-    # mesh.set_clim(-15, 15)
+    fps_text = ax.text(0.01, 0.99, '', transform=ax.transAxes, va='top')
+    mesh.set_clim(0, 350000)
 
     def init():
         mesh.set_array(Z0.ravel())
         return mesh,
 
     def update(_):
+        global last_time, frame_count, real_fps
         try:
             frame = frame_queue.get_nowait()
         except queue.Empty:
@@ -136,15 +146,26 @@ if __name__ == "__main__":
         if save_recording:
             realtime_frames.append(frame)
 
+        if frame_queue.qsize() % 100 == 99:
+            print("Frame queue size OVER: ", frame_queue.qsize())
+
+        frame_count += 1
+        current_time = time.time()
+        # Update the frame rate every second
+        if current_time - last_time >= 1.0:
+            real_fps = frame_count / (current_time - last_time)
+            fps_text.set_text(f'FPS: {real_fps:.1f}')
+            last_time = current_time
+            frame_count = 0
+
         fft_data = compute_rangeFFT_BF(frame)
         Z = fft_data[:, :range_limit]
         mesh.set_array(Z.ravel())
-        vmin, vmax = Z.min(), Z.max()
-        mesh.set_clim(vmin, vmax)
+        # vmin, vmax = Z.min(), Z.max()
+        # mesh.set_clim(vmin, vmax)
         return mesh,
 
     try:
-        input("Press Enter to continue...")
         listener.start()
         ani = FuncAnimation(
             fig,
@@ -154,21 +175,6 @@ if __name__ == "__main__":
             blit=False
         )
         plt.show()
-        # while True:
-        #     print("Waiting for frames...")
-        #     # print frame queue size
-        #     print("Frame queue size: ", frame_queue.qsize())
-        #     print("Write queue size: ", write_queue.qsize())
-        #     time.sleep(1)
-        #     for i in range(fps):
-        #         try:
-        #             if i == fps-1:
-        #                 print("Getting frame...")
-        #                 frame = frame_queue.get(timeout=1)
-        #                 print("Frame shape: ", frame.shape)
-        #         except Exception as e:
-        #             continue
-    
 
     except Exception as e:
         t.join()
