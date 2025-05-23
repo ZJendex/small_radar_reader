@@ -159,6 +159,7 @@ if __name__ == "__main__":
             frame_count = 0
 
         fft_data = compute_rangeFFT_BF(frame)
+        fft_data = np.abs(fft_data)
         Z = fft_data[:, :range_limit]
         mesh.set_array(Z.ravel())
         # vmin, vmax = Z.min(), Z.max()

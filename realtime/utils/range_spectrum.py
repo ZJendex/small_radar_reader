@@ -3,6 +3,8 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 import config
+import numpy as np
+from scipy.signal import detrend
 
 def compute_range_spectrum_onChirp(signal):# signal shape (num_chirp_samples,)
     Y = np.fft.fft(signal, 512)
@@ -18,7 +20,7 @@ def compute_rangeFFT_BF(signal): # signal shape (num_Tx, num_Rx, num_chirp_sampl
     first_fft = np.fft.fft(fft_array, n=config.RANGE_FFT, axis=1)
     second_fft = np.fft.fft(first_fft, n=config.AZIM_FFT, axis=0)
     second_fft = np.fft.fftshift(second_fft, axes=0)
-    second_fft = np.abs(second_fft)
+    # second_fft = np.abs(second_fft)
     return second_fft
 
 def construct_polar_space():
@@ -29,3 +31,13 @@ def construct_polar_space():
     x_axis = np.multiply(range_d, cos_theta_mat)
     y_axis = np.multiply(range_d, sine_theta_mat)
     return x_axis, y_axis
+
+
+def get_phase(point):
+    phase = np.angle(point)
+    # phase = np.squeeze(phase)
+    # phase_unwrapped = np.unwrap(phase, axis=-1)
+    # phase_detrended = detrend(phase_unwrapped, axis=-1)
+    dist = phase * config.c / (4 * np.pi * config.Fc) * 1000
+
+    return dist
