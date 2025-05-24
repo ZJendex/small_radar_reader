@@ -4,12 +4,13 @@ import sys
 import pickle
 import glob
 import socket
+from pathlib import Path
 
 
 filename = sys.argv[1]
 fileroot = filename[:-4]
 
-filename_without_dir = filename.split('/')[-1]
+filename_without_dir = Path(filename).name
 #remove the foot 
 filename_without_dir = filename_without_dir.split('.')[0]
 
